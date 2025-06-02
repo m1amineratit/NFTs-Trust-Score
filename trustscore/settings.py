@@ -25,9 +25,14 @@ SECRET_KEY = 'django-insecure-=fm$*&t8+lm@t)$z4x^th60xxjal$#%grml9@t(#=e*u12-rx6
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['localhost' , '127.0.0.1', 'trustscore.up.railway.app']
 
+CSRF_COOKIE_SECURE = True
+CSRF_TRUSTED_ORIGINS = ['https://trustscore.up.railway.app'] 
 
+ACCOUNT_DEFAULT_HTTP_PROTOCOL = 'https'
+
+SITE_ID = 1
 # Application definition
 
 INSTALLED_APPS = [
