@@ -1,0 +1,728 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NFT Trust Score</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #0c0c0c 0%, #1a1a2e 100%);
+            color: #ffffff;
+            min-height: 100vh;
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 3rem;
+            padding: 2rem 0;
+        }
+
+        .header h1 {
+            font-size: 3rem;
+            font-weight: 800;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 1rem;
+            letter-spacing: -0.02em;
+        }
+
+        .header p {
+            font-size: 1.2rem;
+            color: #a0a0a0;
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        .search-section {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 20px;
+            padding: 2.5rem;
+            margin-bottom: 3rem;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        .form-group label {
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: #e0e0e0;
+        }
+
+        .input-container {
+            position: relative;
+            display: flex;
+            gap: 1rem;
+        }
+
+        .wallet-input {
+            flex: 1;
+            padding: 1rem 1.5rem;
+            background: rgba(255, 255, 255, 0.08);
+            border: 2px solid rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            color: #ffffff;
+            font-size: 1rem;
+            transition: all 0.3s ease;
+            outline: none;
+        }
+
+        /* Django form field styling */
+        input[type="text"],
+        input[type="email"],
+        input[name*="name"] {
+            flex: 1;
+            padding: 1rem 1.5rem;
+            background: rgba(255, 255, 255, 0.08);
+            border: 2px solid rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            color: #ffffff;
+            font-size: 1rem;
+            transition: all 0.3s ease;
+            outline: none;
+            width: 100%;
+        }
+
+        input[type="text"]:focus,
+        input[type="email"]:focus,
+        input[name*="name"]:focus,
+        .wallet-input:focus {
+            border-color: #667eea;
+            background: rgba(255, 255, 255, 0.12);
+            box-shadow: 0 0 0 4px rgba(102, 126, 234, 0.1);
+        }
+
+        /* Django error styling */
+        .errorlist {
+            list-style: none;
+            color: #fca5a5;
+            margin: 0;
+            padding: 0;
+        }
+
+        .errorlist li {
+            background: rgba(239, 68, 68, 0.1);
+            border: 1px solid rgba(239, 68, 68, 0.3);
+            padding: 0.75rem 1rem;
+            border-radius: 8px;
+            margin-top: 0.5rem;
+        }
+
+        .submit-btn {
+            padding: 1rem 2rem;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border: none;
+            border-radius: 12px;
+            color: white;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            min-width: 120px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .submit-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(102, 126, 234, 0.3);
+        }
+
+        .submit-btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .loading-spinner {
+            width: 20px;
+            height: 20px;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            border-top: 2px solid white;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .results-section {
+            display: none;
+            animation: fadeInUp 0.6s ease-out;
+        }
+
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .trust-score-card {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 20px;
+            padding: 2.5rem;
+            margin-bottom: 2rem;
+            text-align: center;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+        }
+
+        .trust-score-value {
+            font-size: 4rem;
+            font-weight: 800;
+            margin-bottom: 1rem;
+            letter-spacing: -0.02em;
+        }
+
+        .trust-score-label {
+            font-size: 1.2rem;
+            color: #a0a0a0;
+            margin-bottom: 2rem;
+        }
+
+        .trust-meter {
+            width: 100%;
+            height: 12px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 6px;
+            overflow: hidden;
+            margin-bottom: 1rem;
+            position: relative;
+        }
+
+        .trust-meter-fill {
+            height: 100%;
+            border-radius: 6px;
+            transition: width 1s ease-out;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .trust-meter-fill::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+            animation: shimmer 2s infinite;
+        }
+
+        @keyframes shimmer {
+            0% { left: -100%; }
+            100% { left: 100%; }
+        }
+
+        .score-excellent { color: #10b981; }
+        .score-good { color: #3b82f6; }
+        .score-fair { color: #f59e0b; }
+        .score-poor { color: #ef4444; }
+
+        .meter-excellent { background: linear-gradient(90deg, #10b981, #34d399); }
+        .meter-good { background: linear-gradient(90deg, #3b82f6, #60a5fa); }
+        .meter-fair { background: linear-gradient(90deg, #f59e0b, #fbbf24); }
+        .meter-poor { background: linear-gradient(90deg, #ef4444, #f87171); }
+
+        .reasons-section {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 20px;
+            padding: 2rem;
+            margin-bottom: 2rem;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+        }
+
+        .reasons-section h3 {
+            font-size: 1.5rem;
+            margin-bottom: 1.5rem;
+            color: #e0e0e0;
+        }
+
+        .reasons-list {
+            list-style: none;
+            space-y: 1rem;
+        }
+
+        .reasons-list li {
+            padding: 1rem;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 10px;
+            margin-bottom: 0.75rem;
+            border-left: 4px solid #667eea;
+            transition: all 0.3s ease;
+        }
+
+        .reasons-list li:hover {
+            background: rgba(255, 255, 255, 0.08);
+            transform: translateX(5px);
+        }
+
+        .nfts-section {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 20px;
+            padding: 2rem;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+        }
+
+        .nfts-section h3 {
+            font-size: 1.5rem;
+            margin-bottom: 2rem;
+            color: #e0e0e0;
+        }
+
+        .nfts-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 1.5rem;
+        }
+
+        .nft-card {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 15px;
+            overflow: hidden;
+            transition: all 0.3s ease;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .nft-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 15px 30px rgba(0, 0, 0, 0.3);
+        }
+
+        .nft-image {
+            width: 100%;
+            height: 200px;
+            object-fit: cover;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .nft-card-content {
+            padding: 1rem;
+        }
+
+        .nft-name {
+            font-weight: 600;
+            color: #e0e0e0;
+            font-size: 0.9rem;
+            line-height: 1.4;
+        }
+
+        .error-message {
+            background: rgba(239, 68, 68, 0.1);
+            border: 1px solid rgba(239, 68, 68, 0.3);
+            color: #fca5a5;
+            padding: 1rem 1.5rem;
+            border-radius: 10px;
+            margin-top: 1rem;
+            display: none;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 1rem;
+            }
+
+            .header h1 {
+                font-size: 2rem;
+            }
+
+            .search-section {
+                padding: 1.5rem;
+            }
+
+            .input-container {
+                flex-direction: column;
+            }
+
+            .trust-score-value {
+                font-size: 3rem;
+            }
+
+            .nfts-grid {
+                grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+                gap: 1rem;
+            }
+
+            .nft-image {
+                height: 150px;
+            }
+        }
+
+        .fade-in {
+            opacity: 0;
+            animation: fadeIn 0.5s ease-out forwards;
+        }
+
+        @keyframes fadeIn {
+            to {
+                opacity: 1;
+            }
+        }
+    </style>
+</head>
+<body>
+    {% extends 'core/base.html' %}
+    {% block content %}
+    <div class="container">
+        <header class="header">
+            <h1>NFT Trust Score</h1>
+            <p>Analyze wallet credibility and NFT collection authenticity with our advanced trust scoring system</p>
+        </header>
+
+        <div class="search-section">
+            <form method="POST" id="trustScoreForm" class="form-group">
+                {% csrf_token %}
+                {{ form.non_field_errors }}
+                <label for="{{ form.name.id_for_label }}">Wallet Address</label>
+                <div class="input-container">
+                    {{ form.name }}
+                    <button type="submit" id="submitBtn" class="submit-btn">
+                        <span id="submitText">Analyze</span>
+                        <div id="loadingSpinner" class="loading-spinner" style="display: none;"></div>
+                    </button>
+                </div>
+                {% if form.name.errors %}
+                    <div class="error-message" style="display: block;">{{ form.name.errors.0 }}</div>
+                {% endif %}
+                <div id="errorMessage" class="error-message"></div>
+            </form>
+        </div>
+
+        {% if trust_score %}
+        <div id="resultsSection" class="results-section" style="display: block;">
+            <div class="trust-score-card">
+                <div id="trustScoreValue" class="trust-score-value {% if trust_score >= 80 %}score-excellent{% elif trust_score >= 60 %}score-good{% elif trust_score >= 40 %}score-fair{% else %}score-poor{% endif %}">{{ trust_score }}</div>
+                <div class="trust-score-label">Trust Score</div>
+                <div class="trust-meter">
+                    <div id="trustMeterFill" class="trust-meter-fill {% if trust_score >= 80 %}meter-excellent{% elif trust_score >= 60 %}meter-good{% elif trust_score >= 40 %}meter-fair{% else %}meter-poor{% endif %}" style="width: {{ trust_score }}%;"></div>
+                </div>
+            </div>
+
+            {% if reasons %}
+            <div id="reasonsSection" class="reasons-section">
+                <h3>Trust Factors</h3>
+                <ul id="reasonsList" class="reasons-list">
+                    {% for reason in reasons %}
+                    <li class="fade-in" style="animation-delay: {{ forloop.counter0|floatformat:1 }}s;">{{ reason }}</li>
+                    {% endfor %}
+                </ul>
+            </div>
+            {% endif %}
+
+            {% if nft_data %}
+            <div id="nftsSection" class="nfts-section">
+                <h3>NFT Collection</h3>
+                <div id="nftsGrid" class="nfts-grid">
+                    {% for nft in nft_data|slice:":10" %}
+                    <div class="nft-card fade-in" style="animation-delay: {{ forloop.counter0 }}s;">
+                        {% if nft.parsed_metadata.image %}
+                        <img src="{{ nft.parsed_metadata.image }}" alt="{{ nft.parsed_metadata.name|default:'NFT' }}" class="nft-image" onerror="this.src='data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgdmlld0JveD0iMCAwIDIwMCAyMDAiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxyZWN0IHdpZHRoPSIyMDAiIGhlaWdodD0iMjAwIiBmaWxsPSIjMzMzIi8+Cjx0ZXh0IHg9IjEwMCIgeT0iMTAwIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBkb21pbmFudC1iYXNlbGluZT0iY2VudHJhbCIgZmlsbD0iIzY2NiIgZm9udC1mYW1pbHk9IkFyaWFsIiBmb250LXNpemU9IjE0Ij5ObyBJbWFnZTwvdGV4dD4KPC9zdmc+';">
+                        {% else %}
+                        <div class="nft-image" style="background: #333; display: flex; align-items: center; justify-content: center; color: #666; font-size: 14px;">No Image</div>
+                        {% endif %}
+                        <div class="nft-card-content">
+                            <div class="nft-name">{{ nft.parsed_metadata.name|default:"Unnamed NFT" }}</div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
+        </div>
+        {% else %}
+        <div id="resultsSection" class="results-section">
+            <div class="trust-score-card">
+                <div id="trustScoreValue" class="trust-score-value">--</div>
+                <div class="trust-score-label">Trust Score</div>
+                <div class="trust-meter">
+                    <div id="trustMeterFill" class="trust-meter-fill" style="width: 0%;"></div>
+                </div>
+            </div>
+
+            <div id="reasonsSection" class="reasons-section">
+                <h3>Trust Factors</h3>
+                <ul id="reasonsList" class="reasons-list">0</ul>
+            </div>
+
+            <div id="nftsSection" class="nfts-section">
+                <h3>NFT Collection</h3>
+                <div id="nftsGrid" class="nfts-grid">The wallet not found</div>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+    {% endblock %}
+
+    <script>
+        class NFTTrustScoreApp {
+            constructor() {
+                this.form = document.getElementById('trustScoreForm');
+                this.walletInput = this.form.querySelector('input[type="text"], input[name*="name"]'); // Django form field
+                this.submitBtn = document.getElementById('submitBtn');
+                this.submitText = document.getElementById('submitText');
+                this.loadingSpinner = document.getElementById('loadingSpinner');
+                this.errorMessage = document.getElementById('errorMessage');
+                this.resultsSection = document.getElementById('resultsSection');
+                this.trustScoreValue = document.getElementById('trustScoreValue');
+                this.trustMeterFill = document.getElementById('trustMeterFill');
+                this.reasonsList = document.getElementById('reasonsList');
+                this.nftsGrid = document.getElementById('nftsGrid');
+
+                this.initEventListeners();
+                this.initializePage();
+            }
+
+            initEventListeners() {
+                // Enhanced form submission to work with Django
+                this.form.addEventListener('submit', this.handleSubmit.bind(this));
+                if (this.walletInput) {
+                    this.walletInput.addEventListener('input', this.clearError.bind(this));
+                }
+            }
+
+            initializePage() {
+                // Add proper styling to Django form field
+                if (this.walletInput) {
+                    this.walletInput.className = 'wallet-input';
+                    this.walletInput.placeholder = 'Enter wallet address (e.g., 0x123...abc)';
+                }
+
+                // Initialize animations for existing results
+                const trustScore = this.trustScoreValue.textContent;
+                if (trustScore && trustScore !== '--') {
+                    this.animateExistingResults(parseInt(trustScore));
+                }
+            }
+
+            animateExistingResults(score) {
+                // Animate the meter fill for server-rendered results
+                setTimeout(() => {
+                    this.trustMeterFill.style.width = `${score}%`;
+                }, 300);
+
+                // Add staggered animations to reasons
+                const reasons = this.reasonsList.querySelectorAll('li');
+                reasons.forEach((reason, index) => {
+                    reason.style.animationDelay = `${index * 0.1}s`;
+                });
+
+                // Add staggered animations to NFTs
+                const nfts = this.nftsGrid.querySelectorAll('.nft-card');
+                nfts.forEach((nft, index) => {
+                    nft.style.animationDelay = `${index * 0.05}s`;
+                });
+            }
+
+            async handleSubmit(e) {
+                // Check if this is a Django form submission or AJAX
+                const formData = new FormData(this.form);
+                const walletAddress = this.walletInput ? this.walletInput.value.trim() : '';
+                
+                // Client-side validation
+                if (!walletAddress) {
+                    this.showError('Please enter a wallet address');
+                    e.preventDefault();
+                    return;
+                }
+
+                if (!this.isValidWalletAddress(walletAddress)) {
+                    this.showError('Please enter a valid wallet address');
+                    e.preventDefault();
+                    return;
+                }
+
+                // Show loading state
+                this.setLoading(true);
+                this.clearError();
+
+                // Let Django handle the form submission naturally
+                // The page will reload with results
+            }
+
+            isValidWalletAddress(address) {
+                // Basic validation for Ethereum addresses
+                return /^0x[a-fA-F0-9]{40}$/.test(address) || address.length >= 32;
+            }
+
+            setLoading(isLoading) {
+                this.submitBtn.disabled = isLoading;
+                this.submitText.style.display = isLoading ? 'none' : 'inline';
+                this.loadingSpinner.style.display = isLoading ? 'block' : 'none';
+            }
+
+            showError(message) {
+                this.errorMessage.textContent = message;
+                this.errorMessage.style.display = 'block';
+                this.errorMessage.classList.add('fade-in');
+            }
+
+            clearError() {
+                this.errorMessage.style.display = 'none';
+                this.errorMessage.classList.remove('fade-in');
+            }
+
+            displayResults(data) {
+                const { trust_score, reasons, nft_data } = data;
+                
+                // Display trust score
+                this.displayTrustScore(trust_score);
+                
+                // Display reasons
+                this.displayReasons(reasons);
+                
+                // Display NFTs
+                this.displayNFTs(nft_data);
+                
+                // Show results section
+                this.resultsSection.style.display = 'block';
+                this.resultsSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }
+
+            displayTrustScore(score) {
+                this.trustScoreValue.textContent = score;
+                
+                // Apply color coding
+                const scoreClass = this.getScoreClass(score);
+                this.trustScoreValue.className = `trust-score-value ${scoreClass}`;
+                this.trustMeterFill.className = `trust-meter-fill meter-${scoreClass.replace('score-', '')}`;
+                
+                // Animate the meter fill
+                setTimeout(() => {
+                    this.trustMeterFill.style.width = `${score}%`;
+                }, 100);
+            }
+
+            getScoreClass(score) {
+                if (score >= 80) return 'score-excellent';
+                if (score >= 60) return 'score-good';
+                if (score >= 40) return 'score-fair';
+                return 'score-poor';
+            }
+
+            displayReasons(reasons) {
+                this.reasonsList.innerHTML = '';
+                
+                if (!reasons || reasons.length === 0) {
+                    this.reasonsList.innerHTML = '<li>No specific factors identified</li>';
+                    return;
+                }
+
+                reasons.forEach((reason, index) => {
+                    const li = document.createElement('li');
+                    li.textContent = reason;
+                    li.style.animationDelay = `${index * 0.1}s`;
+                    li.classList.add('fade-in');
+                    this.reasonsList.appendChild(li);
+                });
+            }
+
+            displayNFTs(nftData) {
+                this.nftsGrid.innerHTML = '';
+                
+                if (!nftData || nftData.length === 0) {
+                    this.nftsGrid.innerHTML = '<p style="grid-column: 1 / -1; text-align: center; color: #a0a0a0;">No NFTs found</p>';
+                    return;
+                }
+
+                // Limit to 10 NFTs as requested
+                const nftsToShow = nftData.slice(0, 10);
+                
+                nftsToShow.forEach((nft, index) => {
+                    const nftCard = this.createNFTCard(nft, index);
+                    this.nftsGrid.appendChild(nftCard);
+                });
+            }
+
+            createNFTCard(nft, index) {
+                const card = document.createElement('div');
+                card.className = 'nft-card fade-in';
+                card.style.animationDelay = `${index * 0.05}s`;
+
+                const img = document.createElement('img');
+                img.className = 'nft-image';
+                img.src = nft.image || 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgdmlld0JveD0iMCAwIDIwMCAyMDAiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxyZWN0IHdpZHRoPSIyMDAiIGhlaWdodD0iMjAwIiBmaWxsPSIjMzMzIi8+Cjx0ZXh0IHg9IjEwMCIgeT0iMTAwIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBkb21pbmFudC1iYXNlbGluZT0iY2VudHJhbCIgZmlsbD0iIzY2NiIgZm9udC1mYW1pbHk9IkFyaWFsIiBmb250LXNpemU9IjE0Ij5ObyBJbWFnZTwvdGV4dD4KPC9zdmc+';
+                img.alt = nft.name || 'NFT';
+                img.onerror = function() {
+                    this.src = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgdmlld0JveD0iMCAwIDIwMCAyMDAiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxyZWN0IHdpZHRoPSIyMDAiIGhlaWdodD0iMjAwIiBmaWxsPSIjMzMzIi8+Cjx0ZXh0IHg9IjEwMCIgeT0iMTAwIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBkb21pbmFudC1iYXNlbGluZT0iY2VudHJhbCIgZmlsbD0iIzY2NiIgZm9udC1mYW1pbHk9IkFyaWFsIiBmb250LXNpemU9IjE0Ij5ObyBJbWFnZTwvdGV4dD4KPC9zdmc+';
+                };
+
+                const content = document.createElement('div');
+                content.className = 'nft-card-content';
+
+                const name = document.createElement('div');
+                name.className = 'nft-name';
+                name.textContent = nft.name || 'Unnamed NFT';
+
+                content.appendChild(name);
+                card.appendChild(img);
+                card.appendChild(content);
+
+                return card;
+            }
+        }
+
+        // Initialize the app when DOM is loaded
+        document.addEventListener('DOMContentLoaded', () => {
+            new NFTTrustScoreApp();
+        });
+
+        // Demo data for testing (remove in production)
+        window.demoAnalyze = function() {
+            const app = new NFTTrustScoreApp();
+            const mockData = {
+                trust_score: 87,
+                reasons: [
+                    "Wallet has been active for over 2 years",
+                    "High-value NFT transactions detected",
+                    "Consistent trading patterns observed",
+                    "No suspicious activity detected",
+                    "Strong community engagement"
+                ],
+                nft_data: [
+                    { name: "Bored Ape #1234", image: "https://via.placeholder.com/200x200/667eea/ffffff?text=Ape" },
+                    { name: "CryptoPunk #5678", image: "https://via.placeholder.com/200x200/764ba2/ffffff?text=Punk" },
+                    { name: "Azuki #9012", image: "https://via.placeholder.com/200x200/10b981/ffffff?text=Azuki" },
+                    { name: "Doodle #3456", image: "https://via.placeholder.com/200x200/f59e0b/ffffff?text=Doodle" },
+                    { name: "Cool Cat #7890", image: "https://via.placeholder.com/200x200/ef4444/ffffff?text=Cat" }
+                ]
+            };
+            app.displayResults(mockData);
+        };
+    </script>
+</body>
+</html>

@@ -1,0 +1,75 @@
+{% extends 'core/base.html' %}
+
+{% block content %}
+    <div class="container">
+        <header class="header">
+            <h1>NFT Trust Score</h1>
+            <p>Analyze wallet credibility and NFT collection authenticity with our advanced trust scoring system</p>
+        </header>
+
+        <div class="search-section">
+            <form id="trustScoreForm" class="form-group" method="post">
+                {% csrf_token %}
+                <label for="walletAddress">Wallet Address</label>
+                <div class="input-container">
+                    <input 
+                        type="text" 
+                        id="walletAddress" 
+                        class="wallet-input" 
+                        name="name"
+                        placeholder="Enter wallet address (e.g., 0x123...abc)"
+                        required
+                    >
+                    <button type="submit" id="submitBtn" class="submit-btn">
+                        <span id="submitText">Analyze</span>
+                        <div id="loadingSpinner" class="loading-spinner" style="display: none;"></div>
+                    </button>
+                </div>
+                <div id="errorMessage" class="error-message"></div>
+            </form>
+        </div>
+
+    {% if trust_score %}
+    <div id="resultsSection" class="results-section">
+        <div class="trust-score-card">
+            <div id="trustScoreValue" class="trust-score-value">{{ trust_score }}</div>
+            <div class="trust-score-label">Trust Score</div>
+            <div class="trust-meter">
+                <div id="trustMeterFill" class="trust-meter-fill" style="width: {{ trust_score }}%;"></div>
+            </div>
+        </div>
+
+        {% if reasons %}
+        <div id="reasonsSection" class="reasons-section">
+            <h3>Trust Factors</h3>
+            <ul id="reasonsList" class="reasons-list">
+                {% for reason in reasons %}
+                <li>{{ reason }}</li>
+                {% endfor %}
+            </ul>
+        </div>
+        {% endif %}
+
+        {% if nft_data %}
+        <div id="nftsSection" class="nfts-section">
+            <h3>NFT Collection</h3>
+            <div id="nftsGrid" class="nfts-grid">
+                {% for nft in nft_data %}
+                <div class="nft-card">
+                    <div class="nft-name">
+                        {{ nft.parsed_metadata.name|default:"Unnamed NFT" }}
+                    </div>
+                    {% if nft.parsed_metadata.image %}
+                    <img src="{{ nft.parsed_metadata.image }}" alt="NFT Image" class="nft-image">
+                    {% else %}
+                    <div class="nft-placeholder">No Image</div>
+                    {% endif %}
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
+    </div>
+    {% endif %}
+</div>
+{% endblock %}
