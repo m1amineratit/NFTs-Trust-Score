@@ -5,8 +5,14 @@ import requests
 from django.conf import settings
 import json
 from datetime import datetime, timedelta, timezone
+from django.contrib.auth.decorators import login_required
+import stripe
+from django.conf import settings
+from django.views.decorators.csrf import csrf_exempt
+from account.models import Profile
 
-def homepage(request):
+@login_required
+def home(request):
     form = WalletForm()
     nft_data = None
     url = None
@@ -165,3 +171,65 @@ def homepage(request):
     }
 
     return render(request, 'pages/homepage.html', context)
+
+
+
+stripe.api_key = settings.STRIPE_SECRET_KEY
+from django.views import View
+from django.http import HttpResponse, JsonResponse
+
+class CreateCheckoutSession(View):
+    def post(self, request, *args, **kwargs):
+        domain = 'http://127.0.0.1:8000'
+
+        checkout_session = stripe.checkout.Session.create(
+            customer_email=request.user.email,
+            payment_method_types=['card'],
+            line_items=[{
+                'price' : 'price_1RYEKYRxebcXidgt16XSFQ9J',
+                'quantity' : 1,
+            }],
+            mode=['subscription'],
+            success_url=domain + '/success/',
+            cancel_url=domain + '/cancel/'
+        )
+        return JsonResponse({'id' : checkout_session.id})
+    
+@csrf_exempt
+def stripe_webhook(request):
+    playload = request.body
+    sig_header = request.META('HTTP_STRIPE_SIGNATURE')
+    evet = None
+
+    try:
+        event = stripe.Webhook.construct_event(
+            playload, sig_header, settings.STRIPE_WEBHOOK_SECRET
+        )
+    except stripe.error.SignatureVerificationError as e:
+        return HttpResponse(status=400)
+
+    # Handle subscription events
+    if event['type'] == 'checkout.session.completed':
+        session = event['data']['object']
+        customer_email = session['customer_email']
+        subscription_id = session['subscription']
+        # Save to user profile
+        profile = Profile.objects.get(user__email=customer_email)
+        profile.stripe_subscription_id = subscription_id
+        profile.save()
+
+    return HttpResponse(status=200)
+
+def is_subscribed(user):
+    profile = user.profile
+    if profile.stripe_subscription_id:
+        subscription = stripe.Subscription.retrieve(profile.stripe_subscription_id)
+        return subscription.status == "active"
+    return False
+
+
+def success(request):
+    return render(request, 'success.html')
+
+def cancel(request):
+    return render(request, 'cancel.html')

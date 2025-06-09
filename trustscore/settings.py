@@ -36,6 +36,7 @@ SITE_ID = 1
 # Application definition
 
 INSTALLED_APPS = [
+    'account',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -149,3 +150,16 @@ from dotenv import load_dotenv
 
 load_dotenv()
 MORALIS_API_KEY = os.getenv("MORALIS_API_KEY")
+
+
+LOGIN_URL = 'login'
+LOGOUT_URL = 'logout'
+
+LOGIN_REDIRECT_URL = 'login'
+LOGOUT_REDIRECT_URL = 'logout'
+
+
+# settings.py
+STRIPE_SECRET_KEY = 'sk_test_51QaJfjRxebcXidgtaOqSmEzrO34XZi7R9lNMWEDV1KE1UrJgmCTKihhK1BqPcr4B7eaYEVAfG5WGFLiTu7liVeWG00W28hiAAP'
+STRIPE_PUBLISHABLE_KEY = 'pk_test_51QaJfjRxebcXidgtGOvLCJPk7AvonURx24dzMPXrTaMcRqW1Fnhus0DU79xBLmCAJpTyr2Mo6TZYRqBa6hJqUJ9f00AK6qFcSH'
+STRIPE_WEBHOOK_SECRET = 'whsec_jhiB7nrHm0b8negcbQI5lmLabQ2HWtj4'
