@@ -490,16 +490,28 @@
     <!-- template.html -->
     
     <button id="checkout-button">Subscribe</button>
-    <script src="https://js.stripe.com/v3/"></script>
-    <script>
-        const stripe = Stripe("{{ STRIPE_PUBLISHABLE_KEY }}");
+<script src="https://js.stripe.com/v3/"></script>
+<script>
+    const stripe = Stripe("{{ STRIPE_PUBLISHABLE_KEY }}");
 
-        document.getElementById("checkout-button").addEventListener("click", function () {
-            fetch("/create-checkout-session/", { method: "POST" })
-                .then((res) => res.json())
-                .then((data) => stripe.redirectToCheckout({ sessionId: data.id }));
+    document.getElementById("checkout-button").addEventListener("click", function () {
+        fetch("/create-checkout-session/", {
+            method: "POST",
+            headers: {
+                "X-CSRFToken": "{{ csrf_token }}",
+            },
+        })
+        .then((res) => res.json())
+        .then((data) => {
+            if (data.id) {
+                stripe.redirectToCheckout({ sessionId: data.id });
+            } else {
+                alert("Error: " + data.error);
+            }
         });
-    </script>
+    });
+</script>
+
 
     {% endblock %}
 

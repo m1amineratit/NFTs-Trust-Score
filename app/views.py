@@ -186,19 +186,19 @@ stripe.api_key = settings.STRIPE_SECRET_KEY
 @method_decorator(csrf_exempt, name='dispatch')
 class CreateCheckoutSession(View):
     def post(self, request, *args, **kwargs):
-        domain = 'https://trustscore.up.railway.app/'  # use your real domain in production
+        domain = 'https://trustscore.up.railway.app'  # ✅ Use your real domain
 
         try:
             checkout_session = stripe.checkout.Session.create(
                 customer_email=request.user.email,
                 payment_method_types=['card'],
                 line_items=[{
-                    'price': 'price_1RYEKYRxebcXidgt16XSFQ9J',  # use your real price ID
+                    'price': 'price_1RYEKYRxebcXidgt16XSFQ9J',
                     'quantity': 1,
                 }],
-                mode='subscription',
+                mode='subscription',  # ✅ FIXED this line
                 success_url=domain + '/success/',
-                cancel_url=domain + '/cancel/'
+                cancel_url=domain + '/cancel/',
             )
             return JsonResponse({'id': checkout_session.id})
         except Exception as e:
