@@ -10,6 +10,10 @@ import stripe
 from django.conf import settings
 from django.views.decorators.csrf import csrf_exempt
 from account.models import Profile
+from django.views import View
+from django.http import HttpResponse, JsonResponse
+from django.utils.decorators import method_decorator
+
 
 @login_required
 def home(request):
@@ -167,45 +171,50 @@ def home(request):
         'url': url,
         'form': form,
         'trust_score': trust_score,
-        'reasons': reasons
+        'reasons': reasons,
+        'STRIPE_PUBLISHABLE_KEY': settings.STRIPE_PUBLISHABLE_KEY,
     }
 
     return render(request, 'pages/homepage.html', context)
 
 
 
-stripe.api_key = settings.STRIPE_SECRET_KEY
-from django.views import View
-from django.http import HttpResponse, JsonResponse
 
+stripe.api_key = settings.STRIPE_SECRET_KEY
+
+
+@method_decorator(csrf_exempt, name='dispatch')
 class CreateCheckoutSession(View):
     def post(self, request, *args, **kwargs):
-        domain = 'http://127.0.0.1:8000'
+        domain = 'https://trustscore.up.railway.app/'  # use your real domain in production
 
-        checkout_session = stripe.checkout.Session.create(
-            customer_email=request.user.email,
-            payment_method_types=['card'],
-            line_items=[{
-                'price' : 'price_1RYEKYRxebcXidgt16XSFQ9J',
-                'quantity' : 1,
-            }],
-            mode=['subscription'],
-            success_url=domain + '/success/',
-            cancel_url=domain + '/cancel/'
-        )
-        return JsonResponse({'id' : checkout_session.id})
-    
+        try:
+            checkout_session = stripe.checkout.Session.create(
+                customer_email=request.user.email,
+                payment_method_types=['card'],
+                line_items=[{
+                    'price': 'price_1RYEKYRxebcXidgt16XSFQ9J',  # use your real price ID
+                    'quantity': 1,
+                }],
+                mode='subscription',
+                success_url=domain + '/success/',
+                cancel_url=domain + '/cancel/'
+            )
+            return JsonResponse({'id': checkout_session.id})
+        except Exception as e:
+            return JsonResponse({'error': str(e)}, status=400)
+
+
 @csrf_exempt
 def stripe_webhook(request):
-    playload = request.body
-    sig_header = request.META('HTTP_STRIPE_SIGNATURE')
-    evet = None
+    payload = request.body
+    sig_header = request.META.get('HTTP_STRIPE_SIGNATURE')  # ✅ Fix: use .get() not ()
 
     try:
         event = stripe.Webhook.construct_event(
-            playload, sig_header, settings.STRIPE_WEBHOOK_SECRET
+            payload, sig_header, settings.STRIPE_WEBHOOK_SECRET
         )
-    except stripe.error.SignatureVerificationError as e:
+    except stripe.error.SignatureVerificationError:
         return HttpResponse(status=400)
 
     # Handle subscription events
@@ -213,12 +222,16 @@ def stripe_webhook(request):
         session = event['data']['object']
         customer_email = session['customer_email']
         subscription_id = session['subscription']
-        # Save to user profile
-        profile = Profile.objects.get(user__email=customer_email)
-        profile.stripe_subscription_id = subscription_id
-        profile.save()
+
+        try:
+            profile = Profile.objects.get(user__email=customer_email)
+            profile.stripe_subscription_id = subscription_id
+            profile.save()
+        except Profile.DoesNotExist:
+            pass  # Log or handle this situation appropriately
 
     return HttpResponse(status=200)
+
 
 def is_subscribed(user):
     profile = user.profile
@@ -230,6 +243,7 @@ def is_subscribed(user):
 
 def success(request):
     return render(request, 'success.html')
+
 
 def cancel(request):
     return render(request, 'cancel.html')
